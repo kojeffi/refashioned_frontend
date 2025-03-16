@@ -86,11 +86,14 @@ const SectionProducts = () => {
     showNotification("Added to cart", "success");
   };
 
+  // Filter products to display only those with the category "Jewellery"
+  const jewelleryProducts = products.filter(product => product.category.category_name === "Jewellery");
+
   return (
-    <div className="container mt-3 pt-3">
+    <div className="container mt-1 pt-3">
       {notification && <NotificationCard {...notification} onClose={() => setNotification(null)} />}
 
-      {recommendations.length > 0 && (
+      {recommendations && recommendations.length > 0 && (
         <div>
           <Heading isCenter isMain desc="Recommended just for you">
             Product Recommendations
@@ -127,13 +130,13 @@ const SectionProducts = () => {
       )}
 
       <Heading isCenter isMain desc="Browse our exclusive products">
-        Our Products
+        Jewellery Shop
       </Heading>
       {loading ? (
         <p className="text-center">Loading products...</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {products.map((product) => (
+          {jewelleryProducts.map((product) => (
             <div key={product.uid} className="rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex flex-col bg-white">
               <div className="w-full h-60 flex justify-center items-center overflow-hidden">
                 <img className="w-full h-full object-cover" src={product.product_images?.[0]?.image_url || "/fallback-image.jpg"} alt={product.product_name} />
@@ -162,9 +165,9 @@ const SectionProducts = () => {
         </div>
       )}
 
-      <div className="mt-14 flex items-center justify-center">
-        <ButtonPrimary>View More</ButtonPrimary>
-      </div>
+      {/* <div className="mt-14 flex items-center justify-center">
+        <ButtonPrimary>View More Products</ButtonPrimary>
+      </div> */}
     </div>
   );
 };

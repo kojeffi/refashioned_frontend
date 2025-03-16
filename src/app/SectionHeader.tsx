@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,7 +7,6 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import "swiper/css/effect-fade";
 import Link from "next/link";
-import ButtonPrimary from '@/shared/Button/ButtonPrimary';
 
 const BASE_API_URL = "https://refashioned.onrender.com/api/products/";
 
@@ -42,7 +39,7 @@ const SectionHeader = () => {
   }, []);
 
   return (
-    <section id="billboard" className="relative overflow-hidden  px-16">
+    <section id="billboard" className="relative overflow-hidden px-6 lg:px-16">
       <Swiper
         modules={[Autoplay, Pagination, Navigation, EffectFade]}
         spaceBetween={0}
@@ -50,13 +47,10 @@ const SectionHeader = () => {
         loop={true}
         effect="fade"
         fadeEffect={{ crossFade: true }}
-        autoplay={{ delay: 3000, disableOnInteraction: false }}
+        autoplay={{ delay: 3500, disableOnInteraction: false }}
         pagination={{ clickable: true }}
-        navigation={{
-          nextEl: ".button-next",
-          prevEl: ".button-prev",
-        }}
-        className="swiper main-swiper rounded-2xl shadow-xl"
+        navigation
+        className="swiper main-swiper rounded-3xl shadow-xl"
       >
         {loading ? (
           <p className="text-center text-gray-500">Loading banners...</p>
@@ -69,24 +63,31 @@ const SectionHeader = () => {
                 : "/default-banner.jpg";
 
             return (
-              <SwiperSlide key={product.uid}>
-                <div className="relative w-full h-[400px]">
-                  {/* Background Image Covering Whole Slider */}
+              <SwiperSlide key={product.uid} id={`product-${product.uid}`}>
+                <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">
+                  {/* Background Image */}
                   <Image
                     src={imageUrl}
                     alt={product.product_name}
                     layout="fill"
                     objectFit="cover"
-                    className="absolute inset-0"
+                    className="absolute inset-0 rounded-3xl"
                     priority
                   />
-                  {/* Overlay Content */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white text-center">
-                    <h2 className="text-4xl font-bold mb-4">{product.product_name}</h2>
 
-                    {/* Shop Now Button */}
-                    <Link href={`/product/${product.slug}`}>
-                      <button className="bg-red-600 text-white px-6 py-3 text-lg font-semibold rounded-full shadow-lg hover:bg-red-700 transition">
+                  {/* Lighter Overlay (Gradient) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/10 to-transparent rounded-3xl"></div>
+
+                  {/* Text Content - Now More Visible */}
+                  <div className="absolute inset-0 flex flex-col items-start justify-center text-red-700 text-left p-10">
+                    <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg">
+                      {product.product_name}
+                    </h2>
+                    <p className="mt-2 text-sm md:text-lg text-white/90">
+                      Discover our latest collection now!
+                    </p>
+                    <Link href={`/product/${product.slug}`} className="mt-6">
+                      <button className="bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 text-lg font-semibold rounded-full shadow-xl transition-all hover:scale-105 hover:from-red-600 hover:to-red-800">
                         Shop Now
                       </button>
                     </Link>

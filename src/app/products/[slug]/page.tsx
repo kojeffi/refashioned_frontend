@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 const API_URL = "https://refashioned.onrender.com/api/products/";
 const CART_API = "https://refashioned.onrender.com/api/cart/add/";
-const WISHLIST_API = "https://refashioned.onrender.com/api/wishlist/add/";
+const WISHLIST_API = "https://refashioned.onrender.com/api/wishlist";
 const REVIEWS_API = "https://refashioned.onrender.com/api/reviews/";
-const RELATED_API = "https://refashioned.onrender.com/api/products/related/"; // Updated endpoint
+const RELATED_API = "https://refashioned.onrender.com/api/products/related/";
 
 const SingleProductPage = () => {
   const params = useParams();
@@ -54,27 +55,31 @@ const SingleProductPage = () => {
 
   useEffect(() => {
     if (product) {
-      // Fetch reviews
-      fetch(`${REVIEWS_API}${product.uid}/`)
-        .then((res) => res.json())
-        .then((data) => setReviews(data.reviews || []));
-
-      // Fetch related products based on category
-      fetch(`${RELATED_API}?category_name=${product.category.category_name}`) // Use category_name
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.products) {
-            setRelatedProducts(data.products);
-          } else {
-            setRelatedProducts([]); // Fallback if no products are returned
-          }
+      const token = localStorage.getItem("authToken"); // Get auth token
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+        : { "Content-Type": "application/json" };
+  
+      // Fetch reviews safely
+      fetch(`${REVIEWS_API}${product.uid}/`, { headers })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Reviews fetch failed: ${res.status}`);
+          return res.json();
         })
-        .catch((err) => {
-          console.error("Failed to fetch related products:", err);
-          setRelatedProducts([]); // Fallback in case of an error
-        });
+        .then((data) => setReviews(data.reviews || []))
+        .catch((err) => console.error("Failed to fetch reviews:", err));
+  
+      // Fetch related products safely
+      fetch(`${RELATED_API}?category_name=${product.category.category_name}`, { headers })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Related products fetch failed: ${res.status}`);
+          return res.json();
+        })
+        .then((data) => setRelatedProducts(data.products || []))
+        .catch((err) => console.error("Failed to fetch related products:", err));
     }
   }, [product]);
+  
 
   const handleAddToWishlist = async () => {
     try {
@@ -142,75 +147,13 @@ const SingleProductPage = () => {
               No Image Available
             </div>
           )}
-
-          {/* Thumbnail Images */}
-          <div className="flex mt-4">
-            {product.product_images?.map((img, index) => (
-              <Image
-                key={index}
-                src={img.image_url}
-                alt="Thumbnail"
-                width={80}
-                height={80}
-                className="border p-1 cursor-pointer mx-1"
-                onClick={() => setSelectedImage(img.image_url)}
-              />
-            ))}
-          </div>
         </div>
 
         {/* Product Details */}
         <div>
           <h1 className="text-3xl font-bold">{product.product_name}</h1>
           <p className="text-gray-500">{product.category.category_name}</p>
-
-          {/* Rating */}
-          <div className="flex items-center mt-2">
-            <span className="text-yellow-500">
-              {"★".repeat(Math.round(product.get_rating))}
-              {"☆".repeat(5 - Math.round(product.get_rating))}
-            </span>
-            <p className="ml-2 text-gray-600">{Array.isArray(product?.reviews) ? product.reviews.length : 0} reviews</p>
-          </div>
-
-          {/* Price */}
-          <p className="text-xl font-semibold mt-3">${product.price}.00</p>
-
-          {/* Color Variants */}
-          {product.color_variant?.length > 0 && (
-            <div className="mt-4">
-              <h4 className="font-semibold">Colors:</h4>
-              <div className="flex gap-2 mt-2">
-                {product.color_variant.map((color) => (
-                  <span
-                    key={color.uid}
-                    className="w-6 h-6 rounded-full border"
-                    style={{ backgroundColor: color.hex_code }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Size Variants */}
-          {product.size_variant?.length > 0 && (
-            <div className="mt-4">
-              <h4 className="font-semibold">Select Size:</h4>
-              <div className="flex gap-2 mt-2">
-                {product.size_variant.map((size) => (
-                  <button
-                    key={size.uid}
-                    className={`px-4 py-2 border rounded-md ${
-                      selectedSize === size.size_name ? "bg-blue-600 text-white" : "bg-gray-100"
-                    }`}
-                    onClick={() => setSelectedSize(size.size_name)}
-                  >
-                    {size.size_name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <p className="text-xl font-semibold mt-3">${(product.price * quantity).toFixed(2)}</p>
 
           {/* Quantity Selector */}
           <div className="mt-4 flex items-center gap-2">
@@ -243,7 +186,10 @@ const SingleProductPage = () => {
             <div key={index} className="border p-4 mt-2 rounded-md">
               <p className="font-semibold">{review.user}</p>
               <p className="text-gray-600">{review.comment}</p>
-              <p className="text-yellow-500">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
+              <p className="text-yellow-500">
+                {"★".repeat(review.rating)}
+                {"☆".repeat(5 - review.rating)}
+              </p>
             </div>
           ))
         ) : (
@@ -257,11 +203,13 @@ const SingleProductPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           {relatedProducts.length > 0 ? (
             relatedProducts.map((item) => (
-              <div key={item.uid} className="border p-4 rounded-md">
-                <Image src={item.image_url} alt={item.product_name} width={200} height={200} className="rounded-md" />
-                <h3 className="mt-2 font-semibold">{item.product_name}</h3>
-                <p className="text-gray-500">₹{item.price}.00</p>
-              </div>
+              <Link href={`/product/${item.slug}`} key={item.uid} passHref>
+                <div className="border p-4 rounded-md cursor-pointer hover:shadow-lg transition">
+                  <Image src={item.image_url} alt={item.product_name} width={200} height={200} className="rounded-md" />
+                  <h3 className="mt-2 font-semibold">{item.product_name}</h3>
+                  <p className="text-gray-500">${item.price}.00</p>
+                </div>
+              </Link>
             ))
           ) : (
             <p>No related products found.</p>
