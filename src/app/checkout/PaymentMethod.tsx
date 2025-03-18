@@ -14,8 +14,10 @@ interface Props {
   isActive: boolean;
   onCloseActive: () => void;
   onOpenActive: () => void;
-  authToken: string | null; // Add authToken as a prop
-  totalPrice: number; // Add totalPrice as a prop
+  authToken: string | null;
+  totalPrice: number;
+  onSuccess: (message: string) => void; // Callback for success
+  onError: (message: string) => void; // Callback for errors
 }
 
 const PaymentMethod: React.FC<Props> = ({
@@ -24,6 +26,8 @@ const PaymentMethod: React.FC<Props> = ({
   onOpenActive,
   authToken,
   totalPrice,
+  onSuccess,
+  onError,
 }) => {
   const [methodActive, setMethodActive] = useState<'Credit-Card' | 'PayPal' | 'M-Pesa'>('Credit-Card');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -31,7 +35,7 @@ const PaymentMethod: React.FC<Props> = ({
   // Function to validate authentication before payment
   const checkAuth = () => {
     if (!authToken) {
-      alert('Authentication required. Please log in again.');
+      onError('Authentication required. Please log in again.');
       console.error('Auth token is missing!');
       return false;
     }
@@ -55,20 +59,20 @@ const PaymentMethod: React.FC<Props> = ({
 
       const data = await response.json();
       if (data.success) {
-        alert('Payment successful');
+        onSuccess('Payment successful!');
       } else {
-        alert(`Payment failed: ${data.message || 'Unknown error'}`);
+        onError(`Payment failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Payment failed. Please try again.');
+      onError('Payment failed. Please try again.');
     }
   };
 
   // Handle PayPal payment
   const handlePayPalPayment = async () => {
     if (!checkAuth()) return;
-
+  
     try {
       const response = await fetch('https://refashioned.onrender.com/api/payment/paypal/', {
         method: 'POST',
@@ -78,49 +82,52 @@ const PaymentMethod: React.FC<Props> = ({
         },
         body: JSON.stringify({ amount: totalPrice, currency: 'USD' }),
       });
-
+  
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('PayPal API Error:', errorData);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+  
       const data = await response.json();
-      if (data.success) {
-        alert('Payment successful');
+      if (data.approval_url) {
+        // Redirect the user to the PayPal approval URL
+        window.location.href = data.approval_url;
       } else {
-        alert(`Payment failed: ${data.message || 'Unknown error'}`);
+        onError(`Payment failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error processing PayPal payment:', error);
-      alert('Payment failed. Please try again.');
+      onError('Payment failed. Please try again.');
     }
   };
 
   // Handle M-Pesa payment
   const handleMpesaPayment = async () => {
     if (!checkAuth()) return;
-  
+
     // Validate and format the phone number
     if (!phoneNumber || phoneNumber.length < 10) {
-      alert('Please enter a valid phone number.');
+      onError('Please enter a valid phone number.');
       return;
     }
-  
+
     // Ensure totalPrice is a number (not a string)
     const amount = parseFloat(totalPrice);
     if (isNaN(amount) || amount <= 0) {
-      alert('Invalid amount. Please enter a valid amount.');
+      onError('Invalid amount. Please enter a valid amount.');
       return;
     }
-  
+
     // Add country code if missing (e.g., Kenya's code is 254)
     const formattedPhoneNumber = phoneNumber.startsWith('254') ? phoneNumber : `254${phoneNumber.substring(1)}`;
-  
+
     console.log('Sending payload:', {
       payment_method: "mpesa",
       phone_number: formattedPhoneNumber,
-      amount: amount, // Send as `amount` instead of `total_amount`
+      amount: amount,
     });
-  
+
     try {
       const response = await fetch('https://refashioned.onrender.com/api/mpesa/stk-push/', {
         method: 'POST',
@@ -131,33 +138,32 @@ const PaymentMethod: React.FC<Props> = ({
         body: JSON.stringify({
           payment_method: "mpesa",
           phone_number: formattedPhoneNumber,
-          amount: amount, // Send as `amount` instead of `total_amount`
+          amount: amount,
         }),
       });
-  
+
       console.log('Response status:', response.status);
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error response:', errorData);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       console.log('Response data:', data);
-  
+
       if (data.success) {
-        alert('Payment successful');
+        onSuccess('Payment successful!');
       } else {
-        alert(`Payment failed: ${data.message || 'Unknown error'}`);
+        onError(`Payment failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error processing M-Pesa payment:', error);
-      alert('Payment failed. Please try again.');
+      onError('Payment failed. Please try again.');
     }
   };
 
-  
   // Render Credit Card payment form
   const renderDebitCredit = () => {
     const active = methodActive === 'Credit-Card';

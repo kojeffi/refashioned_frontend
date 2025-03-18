@@ -209,9 +209,11 @@ const Page = () => {
                         <button className="bg-white p-2 rounded-full shadow hover:bg-gray-200" onClick={() => handleAddToWishlist(product.id)}>
                           <FiHeart className="text-red-500" />
                         </button>
-                        <button className="bg-white p-2 rounded-full shadow hover:bg-gray-200" onClick={() => handleViewProduct(product.slug)}>
-                          <FiEye className="text-gray-600" />
-                        </button>
+                        <a href={`/products/${product.slug}`}>
+                          <button className="bg-white p-2 rounded-full shadow hover:bg-gray-200">
+                            <FiEye className="text-gray-600" />
+                          </button>
+                        </a>
                       </div>
                       <div className="p-4">
                         <h3 className="text-lg font-semibold">{product.product_name}</h3>
@@ -231,5 +233,6 @@ const Page = () => {
     </div>
   );
 };
+
 
 export default Page;

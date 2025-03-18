@@ -11,7 +11,7 @@ const Logo: FC<LogoProps> = ({ className = 'hidden' }) => {
   return (
     <Link className="flex cursor-pointer items-center gap-2" href="/">
       <RiRefreshFill className="text-3xl text-primary" />
-      <span className={`${className} text-2xl font-bold`}>Refashioned</span>
+      <span className={`text-2xl text-primary font-bold`}>Refashioned</span>
     </Link>
   );
 };

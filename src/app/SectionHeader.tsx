@@ -79,8 +79,8 @@ const SectionHeader = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/10 to-transparent rounded-3xl"></div>
 
                   {/* Text Content - Now More Visible */}
-                  <div className="absolute inset-0 flex flex-col items-start justify-center text-red-700 text-left p-10">
-                    <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg">
+                  <div className="absolute inset-0 flex flex-col items-start justify-center text-white text-left p-10">
+                    <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight drop-shadow-lg">
                       {product.product_name}
                     </h2>
                     <p className="mt-2 text-sm md:text-lg text-white/90">

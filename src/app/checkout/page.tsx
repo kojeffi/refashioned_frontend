@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { AiOutlineDelete } from 'react-icons/ai';
 import { MdStar } from 'react-icons/md';
+import { XCircle } from 'lucide-react';
 
 import LikeButton from '@/components/LikeButton';
 import ButtonPrimary from '@/shared/Button/ButtonPrimary';
@@ -41,10 +42,24 @@ interface CheckoutPageProps {
   };
 }
 
+// Notification Card Component
+const NotificationCard = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
+  return (
+    <div
+      className={`fixed top-5 right-5 p-4 rounded-lg shadow-lg transition-opacity duration-500 flex items-center gap-2 z-50
+        ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
+    >
+      <span>{message}</span>
+      <XCircle className="w-5 h-5 cursor-pointer" onClick={onClose} />
+    </div>
+  );
+};
+
 const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
   const [tabActive, setTabActive] = useState<'ContactInfo' | 'ShippingAddress' | 'PaymentMethod'>('ShippingAddress');
   const [cartData, setCartData] = useState<{ items: CartItem[]; totalPrice: number } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Retrieve cart data from query parameters
   useEffect(() => {
@@ -62,11 +77,55 @@ const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
     }
   }, []);
 
+  // Show notification
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   const handleScrollToEl = (id: string) => {
     const element = document.getElementById(id);
     setTimeout(() => {
       element?.scrollIntoView({ behavior: 'smooth' });
     }, 80);
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!authToken) {
+      showNotification('Please log in to confirm your order.', 'error');
+      return;
+    }
+
+    if (!cartData) {
+      showNotification('Your cart is empty.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://refashioned.onrender.com/api/orders/', {
+        method: 'POST', // Changed from GET to POST
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          items: cartData.items,
+          totalPrice: cartData.totalPrice,
+        }),
+      });
+
+      if (response.ok) {
+        const order = await response.json();
+        showNotification('Order confirmed successfully!', 'success');
+        window.location.href = `/profile?order_id=${order.id}`;
+      } else {
+        const errorData = await response.json();
+        showNotification(`Failed to confirm order: ${errorData.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      showNotification('An error occurred while confirming your order.', 'error');
+    }
   };
 
   const renderProduct = (item: CartItem) => {
@@ -112,7 +171,7 @@ const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
     return (
       <div className="space-y-8">
         <div id="ContactInfo" className="scroll-mt-24">
-         
+          {/* ContactInfo component */}
         </div>
         <div id="ShippingAddress" className="scroll-mt-24">
           <ShippingAddress
@@ -137,7 +196,9 @@ const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
             }}
             onCloseActive={() => setTabActive('PaymentMethod')}
             authToken={authToken}
-            totalPrice={cartData?.totalPrice || 0} // Pass totalPrice to PaymentMethod
+            totalPrice={cartData?.totalPrice || 0}
+            onSuccess={(message) => showNotification(message, 'success')} // Pass the callback here
+            onError={(message) => showNotification(message, 'error')} // Pass the callback here
           />
         </div>
       </div>
@@ -168,20 +229,7 @@ const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
 
             <div className="mt-10 border-t border-neutral-300 pt-6 text-sm">
               <div>
-                <div className="text-sm">Discount code</div>
-                <div className="mt-1.5 flex">
-                  <Input
-                    rounded="rounded-lg"
-                    sizeClass="h-12 px-4 py-3"
-                    className="flex-1 border-neutral-300 bg-transparent placeholder:text-neutral-500 focus:border-primary"
-                  />
-                  <button
-                    type="button"
-                    className="ml-3 flex w-24 items-center justify-center rounded-2xl border border-neutral-300 bg-gray px-4 text-sm font-medium transition-colors hover:bg-neutral-100"
-                  >
-                    Apply
-                  </button>
-                </div>
+                {/* Additional details */}
               </div>
 
               <div className="mt-4 flex justify-between pt-4 text-base font-semibold">
@@ -189,10 +237,21 @@ const CheckoutPage = ({ searchParams }: CheckoutPageProps) => {
                 <span>${cartData?.totalPrice || '0.00'}</span>
               </div>
             </div>
-            <ButtonPrimary className="mt-8 w-full">Confirm order</ButtonPrimary>
+            <ButtonPrimary className="mt-8 w-full" onClick={handleConfirmOrder}>
+              Confirm order
+            </ButtonPrimary>
           </div>
         </div>
       </main>
+
+      {/* Notification Card */}
+      {notification && (
+        <NotificationCard
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };

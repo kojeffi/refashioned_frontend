@@ -77,23 +77,11 @@ const CartSideBar = () => {
                     {product.product_name}
                   </Link>
                 </h3>
-                <span className="my-1 text-sm text-neutral-500">{product.category}</span>
-                <div className="flex items-center gap-1">
-                  <MdStar className="text-yellow-400" />
-                  <span className="text-sm">4.5</span>
-                </div>
               </div>
               <span className="font-medium">${product.price}</span>
             </div>
           </div>
           <div className="flex w-full items-end justify-between text-sm">
-            <div className="flex items-center gap-3">
-              <LikeButton />
-              <AiOutlineDelete className="text-2xl" />
-            </div>
-            <div>
-              <InputNumber defaultValue={quantity} />
-            </div>
           </div>
         </div>
       </div>
@@ -138,9 +126,9 @@ const CartSideBar = () => {
                       <span className="text-xl font-medium">${cartData?.cart_items.reduce((acc, item) => acc + item.product.price * item.quantity, 0)}</span>
                     </p>
                     <div className="mt-5 flex items-center gap-5">
-                      <ButtonPrimary href="/checkout" onClick={handleCloseMenu} className="w-full flex-1">
+                      {/* <ButtonPrimary href="/checkout" onClick={handleCloseMenu} className="w-full flex-1">
                         Checkout
-                      </ButtonPrimary>
+                      </ButtonPrimary> */}
                       <ButtonSecondary onClick={handleCloseMenu} href="/cart" className="w-full flex-1 border-2 border-primary text-primary">
                         View cart
                       </ButtonSecondary>
